@@ -25,8 +25,8 @@ public class Main {
                 else if (line[0].equals("nbtest")) {
                     if (line.length != 4)
                         System.out.println("nbtest <model-file> <test-directory> <predictions-file>");
-//                    else
-//                        Classifier.test(line[1], line[2], line[3]);
+                    else
+                        Classifier.test(line[1], line[2], line[3]);
                 }
                 else {
                     System.out.println("nbtrain <training-directory> <model-file>");
