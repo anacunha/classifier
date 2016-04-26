@@ -95,4 +95,25 @@ public class FileUtil {
 
         return documents;
     }
+
+    public static void getOriginalClassification(String folderPath) {
+        StringBuilder originalClassification = new StringBuilder();
+
+        try {
+
+            originalClassification.append("document,original classification\n");
+
+            Files.walk(Paths.get(folderPath)).forEach(filePath -> {
+                if (Files.isRegularFile(filePath) && isTextFile(filePath)) {
+                    originalClassification.append(FilenameUtils.removeExtension(filePath.getFileName().toString()));
+                    originalClassification.append(",").append(filePath.getName(filePath.getNameCount() - 2)).append("\n");
+                }
+            });
+            FileUtils.writeStringToFile(new File("original_classification.csv"), originalClassification.toString());
+
+        } catch (IOException e) {
+            //e.printStackTrace();
+            System.out.println("Couldn't find folder " + folderPath);
+        }
+    }
 }

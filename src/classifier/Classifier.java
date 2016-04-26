@@ -19,22 +19,15 @@ public class Classifier {
         int totCount = posCount + negCount;
 
         double posPrior = (double) posCount / totCount;
-        System.out.println("Positive Probability: " + posPrior);
         double negPrior = (double) negCount / totCount;
-        System.out.println("Negative Probability: " + negPrior);
 
         // Positive Reviews
         String pos = FileUtil.concatenateDocuments(trainingDirectory + "/pos");
         Map<String, Integer> posMap = getWordCount(pos);
-        System.out.println("\nTotal Positive Words: " + getTotalWords(pos));
 
         // Negative Reviews
         String neg = FileUtil.concatenateDocuments(trainingDirectory + "/neg");
         Map<String, Integer> negMap = getWordCount(neg);
-        System.out.println("\nTotal Negative Words: " + getTotalWords(neg));
-
-        int vocabularySize = getVocabulary(pos, neg).size();
-        System.out.println("\nVocabulary Size: " + vocabularySize);
 
         saveModel(modelFile, posPrior, getModel(getVocabulary(pos, neg), posMap, pos), negPrior, getModel(getVocabulary(pos, neg), negMap, neg));
     }
@@ -57,16 +50,16 @@ public class Classifier {
             double negPrediction = Math.log(negPrior);
 
             for (String word : document.getValue().split("\\s+")) {
-                System.out.println(word);
+
                 if (posModel.containsKey(word))
                     posPrediction = posPrediction + posModel.get(word);
                 else
-                    // Do something else
+                    posPrediction = posPrediction + posModel.get("null");
 
                 if (negModel.containsKey(word))
                     negPrediction = negPrediction + negModel.get(word);
                 else
-                    // Do something else
+                    negPrediction = negPrediction + negModel.get("null");
             }
 
             posPredictions.put(document.getKey(), posPrediction);
@@ -77,10 +70,13 @@ public class Classifier {
 
     private static Map<String, Double> getModel(Set<String> vocabulary, Map<String, Integer> map, String doc) {
         Map<String, Double> model = new HashMap<>();
+        int totalWords = getTotalWords(doc);
+        int vocabularySize = vocabulary.size();
+
+        model.put(null, getWordFrequency(null, map, totalWords, vocabularySize));
 
         for (String word : vocabulary) {
-            double wordFrequency = getWordFrequency(word, map, getTotalWords(doc), vocabulary.size());
-            System.out.println(word + " " + wordFrequency);
+            double wordFrequency = getWordFrequency(word, map, totalWords, vocabularySize);
             model.put(word, wordFrequency);
         }
 
@@ -117,14 +113,22 @@ public class Classifier {
         StringBuilder predictions = new StringBuilder();
 
         try {
-            predictions.append("document, classification, score\n");
+            predictions.append("document,pos score,neg score,classification\n");
 
             for (String document : posPredictions.keySet()) {
-                predictions.append(document).append(", pos, ").append(posPredictions.get(document)).append("\n");
-                predictions.append(document).append(", neg, ").append(negPredictions.get(document)).append("\n");
+                double posPrediction = posPredictions.get(document);
+                double negPrediction = negPredictions.get(document);
+                predictions.append(document).append(",").append(posPrediction).append(",").append(negPrediction);
+
+                if (posPrediction >= negPrediction)
+                    predictions.append(",").append("pos").append("\n");
+                else
+                    predictions.append(",").append("neg").append("\n");
+
             }
 
             FileUtils.writeStringToFile(new File(predictionsFile + ".csv"), predictions.toString());
+            System.out.println("Saved predictions file to " + predictionsFile);
 
         } catch (IOException e) {
             System.out.println("Couldn't save predictions to file " + predictionsFile);
@@ -138,10 +142,8 @@ public class Classifier {
         for (String probability : modelStr) {
             String[] line = probability.split("\\s");
 
-            if (line.length == 3 && line[0].equals(className)) {
+            if (line.length == 3 && line[0].equals(className))
                 model.put(line[1], Double.parseDouble(line[2]));
-                System.out.println(line[1] + " " + Double.parseDouble(line[2]));
-            }
         }
         return model;
     }

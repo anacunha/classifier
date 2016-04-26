@@ -13,6 +13,8 @@ public class Main {
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             String input;
 
+            //FileUtil.getOriginalClassification("textcat/dev");
+
             while ((input = br.readLine()) != null) {
                 String[] line = input.split(" ");
                 if (line[0].equals("nbtrain")) {
